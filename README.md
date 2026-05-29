@@ -26,7 +26,7 @@ Just get option from DB table in IConfiguration.
 public record Test1(string Foo, int Bar);
 
 var value = configureation.GetValueOf<Test1>();
-            Console.WriteLine($"Test1: {JsonSerializer.Serialize(value)}");
+Console.WriteLine($"Test1: {JsonSerializer.Serialize(value)}");
 ```
 
  

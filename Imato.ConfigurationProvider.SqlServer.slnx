@@ -1,5 +1,4 @@
 <Solution>
-  <Folder Name="/Solution Items/" />
   <Project Path="examples/Imato.TestApp/Imato.TestApp.csproj" Id="ce5d299e-6622-4bb4-a294-f9cdd0b79625" />
   <Project Path="src/Imato.ConfigurationProvider.SqlServer/Imato.ConfigurationProvider.SqlServer.csproj" />
 </Solution>
