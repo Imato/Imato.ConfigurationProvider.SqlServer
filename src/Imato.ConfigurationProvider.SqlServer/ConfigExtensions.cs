@@ -12,7 +12,7 @@ public static class ConfigExtensions
     /// <param name="sectionName"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
-    public static T? GetValueOf<T>(this IConfiguration configuration, string? sectionName = null)
+    public static T GetValueOf<T>(this IConfiguration configuration, string? sectionName = null)
     {
         var name = sectionName ?? typeof(T).Name;
         return configuration.GetRequiredSection(name).Get<T>()

@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AsyncKeyedLock" Version="8.0.2" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.8" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.8" />
@@ -15,8 +16,6 @@
   </ItemGroup>
 	
   <PropertyGroup>
-		<PackageId>Imato.ConfigurationProvider.SqlServer</PackageId>
-		<Title>Imato.ConfigurationProvider.SqlServer</Title>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<Authors>Alexey Varentsov (@imato)</Authors>
 		<Company>Imato</Company>
@@ -27,8 +26,7 @@
 		<PackageTags>SQL Configuration</PackageTags>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageReleaseNotes>Ready to use</PackageReleaseNotes>
-		<Version>1.0.2</Version>
-		<AssemblyName>Imato.ConfigurationProvider.SqlServer</AssemblyName>
+		<Version>1.0.3</Version>
 		<PackageIcon>icon.png</PackageIcon>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
