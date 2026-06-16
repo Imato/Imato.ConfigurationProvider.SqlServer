@@ -305,16 +305,19 @@ else
 
 	private void SyncLocal()
 	{
-		if (_options.SyncLocalConfigsToDb && _configurationRoot != null)
+		using (var locker = Lock(nameof(SyncLocal), 30_000))
 		{
-			using var connection = new SqlConnection(_options.ConnectionString);
-			foreach (var c in _configurationRoot.AsEnumerable())
+			if (_options.SyncLocalConfigsToDb && _configurationRoot != null)
 			{
-				foreach (var provider in _configurationRoot.Providers.Where(x => x.GetType().Name == "JsonConfigurationProvider"))
+				using var connection = new SqlConnection(_options.ConnectionString);
+				foreach (var c in _configurationRoot.AsEnumerable())
 				{
-					if (provider.TryGet(c.Key, out var value))
+					foreach (var provider in _configurationRoot.Providers.Where(x => x.GetType().Name == "JsonConfigurationProvider"))
 					{
-						Add(c.Key, c.Value, connection);
+						if (provider.TryGet(c.Key, out var value))
+						{
+							Add(c.Key, c.Value, connection);
+						}
 					}
 				}
 			}

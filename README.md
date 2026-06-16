@@ -55,6 +55,8 @@ You can update, save same konfiguration key in table
 ```
 var provider = configureation.GetConfigurationProvider<SqlConfigurationProvider>();
 provider.Set("Test1:Bar", (value.Bar + 1).ToString());
+// OR
+configuration.SetValue("Test1:Bar", (value.Bar + 1).ToString());
 ```
 
 Manual update value in table 
