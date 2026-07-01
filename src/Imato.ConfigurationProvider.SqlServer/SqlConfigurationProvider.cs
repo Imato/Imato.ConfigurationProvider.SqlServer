@@ -1,19 +1,18 @@
-﻿using AsyncKeyedLock;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Imato.AsyncLocker;
 
 namespace Imato.ConfigurationProvider.SqlServer;
 
 /// <summary>
 /// Sync app configuration with SQL table
 /// </summary>
-public class SqlConfigurationProvider : Microsoft.Extensions.Configuration.ConfigurationProvider
+public class SqlConfigurationProvider : Microsoft.Extensions.Configuration.ConfigurationProvider, IDisposable, IAsyncDisposable
 {
 	private DateTimeOffset _lastLoad = DateTime.UnixEpoch;
 	private readonly Timer _timer;
 	private readonly SqlConfigurationOptions _options;
 	private readonly IConfigurationRoot? _configurationRoot;
-	private static AsyncKeyedLocker<string> _locker = new();
 
 	public SqlConfigurationProvider(SqlConfigurationOptions options, IConfigurationRoot? configurationRoot = null)
 	{
@@ -30,7 +29,7 @@ public class SqlConfigurationProvider : Microsoft.Extensions.Configuration.Confi
 
 	public override void Load()
 	{
-		using (var locker = Lock(nameof(Load), 30_000))
+		using (var locker = AsyncKeyLocker.Lock(nameof(Load)))
 		{
 			var changes = 0;
 
@@ -68,7 +67,7 @@ public class SqlConfigurationProvider : Microsoft.Extensions.Configuration.Confi
 	{
 		if (string.IsNullOrEmpty(key)) return;
 
-		using (var locker = Lock(key, 5_000))
+		using (var locker = AsyncKeyLocker.Lock(key))
 		{
 			var prevValue = Data.ContainsKey(key) ? Data[key] : null;
 			var rows = AddOrUdate(key, value, prevValue);
@@ -84,18 +83,11 @@ public class SqlConfigurationProvider : Microsoft.Extensions.Configuration.Confi
 		}
 	}
 
-	private IDisposable Lock(string key, int timeout)
-	{
-		return _locker.Lock(key);
-		// AsyncKeyedLock bug
-		var locker = _locker.LockOrNull(nameof(Load), timeout);
-		if (locker == null)
-			throw new ApplicationException($"Cannot lock key {key}");
-		return locker;
-	}
-
 	private string SelectSql =>
-		$"select [Key], Value, UpdateDate from {_options.SchemaName}.{_options.TableName} where Value is not null and UpdateDate > @lastLoad and App = @app";
+		"select [Key], Value, UpdateDate " +
+		$"from {_options.SchemaName}.{_options.TableName} with (nolock)" +
+		"where Value is not null and UpdateDate > @lastLoad and App = @app " +
+		"and Environment = @env and Server = @server";
 
 	private void CreateTable()
 	{
@@ -151,7 +143,7 @@ begin
 				and i.Environment = c.Environment
 				and i.Server = c.Server
 				and i.[Key] = c.[Key]
-		where c.Value != i.Value;
+		where isnull(c.Value, '') != isnull(i.Value, '');
 end;
 go
 
@@ -175,7 +167,9 @@ begin
 end;
 go
 ";
-		using (var locker = Lock(nameof(CreateTable), 30_000))
+		var locker = AsyncKeyLocker.LockOnce(nameof(CreateTable));
+		if (!locker.Accrued) return;
+		using (locker.Lock)
 		{
 			if (_lastLoad > DateTime.UnixEpoch) return;
 
@@ -305,7 +299,7 @@ else
 
 	private void SyncLocal()
 	{
-		using (var locker = Lock(nameof(SyncLocal), 30_000))
+		using (var locker = AsyncKeyLocker.Lock(nameof(SyncLocal)))
 		{
 			if (_options.SyncLocalConfigsToDb && _configurationRoot != null)
 			{
@@ -322,5 +316,15 @@ else
 				}
 			}
 		}
+	}
+
+	public void Dispose()
+	{
+		_timer?.Dispose();
+	}
+
+	public ValueTask DisposeAsync()
+	{
+		return _timer?.DisposeAsync() ?? ValueTask.CompletedTask;
 	}
 }
